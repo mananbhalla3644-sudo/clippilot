@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clippilot"
+version = "0.1.0"
+description = "AI agent that edits video with ffmpeg and drives Windows apps by real screen control (mouse/keyboard)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "ClipPilot" }]
+keywords = ["agent", "gui-automation", "video-editing", "ffmpeg", "vlm", "automation"]
+
+dependencies = [
+  "mss>=9.0.1",          # fast screen capture
+  "pillow>=10.0",        # image ops
+  "numpy>=1.24",         # diffing, audio math
+  "pynput>=1.7.6",       # keyboard + multi-monitor mouse
+  "pynput>=1.7.6; sys_platform == 'win32'",
+  "requests>=2.31",      # LLM HTTP client
+  "pyyaml>=6.0",         # config
+  "opencv-python>=4.9",  # template matching
+]
+
+[project.optional-dependencies]
+ocr = ["pytesseract>=0.3.10"]
+winsdk = ["winsdk>=1.0.230621005", "winsdk-Windows.Media.Ocr>=1.0.230621005", "winsdk-Windows.Graphics.Imaging>=1.0.230621005", "winsdk-Windows.Globalization>=1.0.230621005", "winsdk-Windows.Storage.Streams>=1.0.230621005"]
+whisper = ["faster-whisper>=1.0.0"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+clippilot = "clippilot.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+clippilot = ["assets/templates/*", "recipes/*.yaml"]

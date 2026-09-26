@@ -1,0 +1,37 @@
+# Custom handoff recipe for ClipPilot
+#
+# Drop a copy of this file as recipes/<yourapp>.yaml, edit it, and the app shows
+# up in the Handoff tab. Recipes are just a list of actions - the same ones the
+# agent itself can perform.
+#
+# Placeholders:
+#   {project}   full path to the file being handed off
+#   {dir}       its folder
+#   {filename}  file name only
+#   {stem}      file name without extension
+
+key: myeditor
+name: My Editor
+app: myeditor            # exe name, Start Menu entry, or ms-settings: page
+window_title: My Editor  # used to focus the window
+description: Import the rendered clip.
+launch_wait: 8.0
+tips:
+  - Anything worth telling the agent about this app.
+steps:
+  - type: launch_app
+    app: myeditor
+    wait: 8
+  - type: focus_window
+    title_contains: My Editor
+    maximize: true
+  - type: key
+    keys: ctrl+o
+  - type: type
+    text: "{project}"
+    clear_first: true
+  - type: key
+    keys: enter
+  - type: click
+    text: Import
+    _optional: true        # keep going if this step fails

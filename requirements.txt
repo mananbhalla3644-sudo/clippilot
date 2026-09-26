@@ -1,0 +1,25 @@
+# --- core (required) -------------------------------------------------------
+mss>=9.0.1
+pillow>=10.0
+numpy>=1.24
+pynput>=1.7.6
+requests>=2.31
+pyyaml>=6.0
+opencv-python>=4.9
+
+# --- optional: OCR (pick ONE) ---------------------------------------------
+# Backend "tesseract": also install the tesseract binary + eng.traineddata
+# (see setup_windows.ps1 - it does it for you)
+pytesseract>=0.3.10
+# Backend "windows": built into Windows 10/11, no binary needed, but needs these
+# winsdk>=1.0.230621005
+# winsdk-Windows.Media.Ocr>=1.0.230621005
+# winsdk-Windows.Graphics.Imaging>=1.0.230621005
+# winsdk-Windows.Globalization>=1.0.230621005
+# winsdk-Windows.Storage.Streams>=1.0.230621005
+
+# --- optional: captions / auto-transcribe ---------------------------------
+faster-whisper>=1.0.0
+
+# --- optional: dev ---------------------------------------------------------
+pytest>=8.0

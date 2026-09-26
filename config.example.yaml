@@ -1,0 +1,107 @@
+# ClipPilot configuration.  Copy to config.yaml and edit.
+# Any ${ENV_VAR} / ${ENV_VAR:default} string is interpolated from the environment.
+
+llm:
+  # Any OpenAI-compatible endpoint. Examples:
+  #   OpenAI     : base_url https://api.openai.com/v1        model gpt-4.1
+  #   OpenRouter : base_url https://openrouter.ai/api/v1     model anthropic/claude-sonnet-4
+  #   Groq       : base_url https://api.groq.com/openai/v1   model llama-3.3-70b-versatile
+  #   Ollama     : base_url http://localhost:11434/v1        model qwen2.5-vl:7b
+  #   LM Studio  : base_url http://localhost:1234/v1         model qwen2.5-vl-7b-instruct
+  base_url: "${OPENAI_BASE_URL:https://api.openai.com/v1}"
+  model: "${OPENAI_MODEL:gpt-4.1}"
+  api_key: "${OPENAI_API_KEY:}"
+  vision_model: "${CLIPPILOT_VISION_MODEL:}"   # falls back to `model` when empty
+  temperature: 0.1
+  max_tokens: 1200
+  timeout: 90
+  max_retries: 4
+  native_tools: true      # false = force plain-JSON mode (works with more providers)
+
+perception:
+  ocr_backend: auto       # auto | windows | tesseract | none
+  capture: virtual        # virtual = all monitors, primary = main display only
+  scale: 1.0              # downscale screenshots before OCR (faster) / before LLM
+  llm_image: true         # send the screenshot to the vision model
+  max_elements: 120       # cap elements listed in the prompt
+  keep_words: false       # expose OCR words as separate clickable elements
+  min_confidence: 0.35
+  merge_words_gap: 34     # px gap that still counts as one label
+  templates_dir: assets/templates
+  cache_dir: .cache/perception
+
+control:
+  backend: win32          # win32 | pyautogui
+  humanize: true          # eased cursor motion, jittered key timing
+  move_duration: [0.28, 0.65]   # seconds, random in range
+  type_delay: [0.028, 0.095]    # per character
+  clipboard_paste_threshold: 40 # longer text is pasted (faster + unicode-safe)
+  settle: [0.25, 0.6]           # seconds to wait after an action before observing
+  dry_run: false          # true = log actions, touch nothing
+  failsafe: true          # slam mouse into top-left corner to abort instantly
+  default_settle_ms: 400
+
+safety:
+  require_confirmation: true
+  confirm_on: [type_text, run_command, delete, export_overwrite, close_app, install]
+  allow_run_command: false
+  allow_clipboard_write: true
+  blocked_rects: []       # e.g. [[0,0,400,60]] to keep hands off a region
+  max_clicks_per_minute: 240
+  max_keys_per_minute: 600
+  refuse_password_fields: true
+  denylist_keys: [ctrl+alt+delete]
+  confirm_texts: ["delete", "Remove", "Discard", "Erase", "format", "reset", "overwrite", "unsubscribe"]
+
+agent:
+  max_steps: 40
+  max_retries_per_action: 3
+  history_limit: 24             # messages kept before compaction
+  verify_after_actions: [click, double_click, key, type]
+  vlm_verify: false             # ask the vision model "did that work?" after each state change
+  interactive: true             # allow asking the human
+  retry_prompt: true
+  run_dir: runs
+  save_transcript: true
+
+video:
+  ffmpeg: ""                    # blank = auto-discover PATH / ./bin / winget
+  ffprobe: ""
+  work_dir: .work
+  default:
+    resolution: 1080x1920       # vertical / short-form default
+    fps: 30
+    crf: 20
+    preset: veryfast
+    format: mp4
+    audio_bitrate: 192k
+    normalize: loudnorm         # none | peak | loudnorm
+    target_lufs: -14.0
+    aspect: fill                # fill = crop to fill (+ blurred pad fallback)
+    pad_blur: true
+  highlights:
+    window: 2.0
+    hop: 0.5
+    silence_db: -32.0
+    min_silence: 0.35
+    pad: 0.25
+    top_n: 5
+  captions:
+    whisper_model: base
+    language: en
+    max_chars_per_line: 34
+    max_lines: 2
+    min_duration: 0.7
+    style: "FontName=Arial,FontSize=18,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,Alignment=2,MarginV=90"
+
+# App handoff recipes (screen-control automation per editor)
+handoff:
+  default_app: capcut
+  launch_wait: 6.0
+  window_wait: 12.0
+  recipes_dir: recipes
+
+vlm:
+  enabled: true
+  max_side: 1450          # downscale before sending (keeps tokens/cost sane)
+  jpeg_quality: 80

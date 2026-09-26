@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# secrets
+config.yaml
+.env
+
+# runtime output
+runs/
+state/
+out/
+*.mp4
+*.srt
+*.edl
+*.fcpxml

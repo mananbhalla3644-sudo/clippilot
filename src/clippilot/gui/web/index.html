@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClipPilot</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ───────────────────────────── sidebar ───────────────────────────── -->
+  <aside id="sidebar">
+    <div class="brand">
+      <div class="logo">CP</div>
+      <div>
+        <div class="brand-name">ClipPilot</div>
+        <div class="brand-sub" id="brandSub">loading…</div>
+      </div>
+    </div>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="agent" role="tab">Agent</button>
+      <button class="tab" data-tab="editor" role="tab">Edit</button>
+      <button class="tab" data-tab="handoff" role="tab">Handoff</button>
+      <button class="tab" data-tab="settings" role="tab">Setup</button>
+    </nav>
+
+    <div class="side-block">
+      <div class="side-label">Quick tasks</div>
+      <button class="qtask" data-q="Find the best moments in ">+ Find highlights</button>
+      <button class="qtask" data-q="Delete the silence and dead air">- Remove dead air</button>
+      <button class="qtask" data-q="Make a vertical 9:16 version with captions">9:16 + captions</button>
+      <button class="qtask" data-q="Open the last render in my editor">Open in editor</button>
+    </div>
+
+    <div class="side-block">
+      <div class="side-label">Safety</div>
+      <label class="switch">
+        <input type="checkbox" id="optDry" />
+        <span>Dry run (no real clicks)</span>
+      </label>
+      <label class="switch">
+        <input type="checkbox" id="optConfirm" checked />
+        <span>Ask before risky actions</span>
+      </label>
+      <label class="switch">
+        <input type="checkbox" id="optVerify" />
+        <span>Vision check after each click</span>
+      </label>
+      <label class="field">
+        <span>Max steps</span>
+        <input type="number" id="optSteps" min="4" max="200" value="40" />
+      </label>
+      <label class="field">
+        <span>Capture target</span>
+        <select id="optMonitor"></select>
+      </label>
+    </div>
+
+    <div class="side-block grow">
+      <div class="side-label">Activity log</div>
+      <div id="logList" class="log"></div>
+    </div>
+
+    <div class="side-foot">
+      <span id="statusDot" class="dot"></span>
+      <span id="statusText">idle</span>
+      <button id="btnStop" class="mini danger" title="Stop the agent">Stop</button>
+    </div>
+  </aside>
+
+  <!-- ───────────────────────────── main ───────────────────────────── -->
+  <main id="main">
+
+    <!-- ═══════════ AGENT ═══════════ -->
+    <section class="panel active" data-panel="agent">
+      <div class="agent-grid">
+        <div class="chat-col">
+          <div id="chat" class="chat">
+            <div class="empty" id="chatEmpty">
+              <h2>What should ClipPilot do?</h2>
+              <p>Describe the job in plain English. It edits video with a real ffmpeg engine
+                 and drives Windows apps with the mouse and keyboard.</p>
+              <ul>
+                <li><b>“cut the first 12 seconds off <code>D:\raw.mp4</code>, make it vertical, add captions”</b></li>
+                <li><b>“find the best 30 seconds in my podcast recording and burn in subtitles”</b></li>
+                <li><b>“export it and open the result in CapCut”</b></li>
+              </ul>
+              <p class="hint">Move the mouse into the top-left corner at any time to abort instantly.</p>
+            </div>
+          </div>
+          <div class="composer">
+            <textarea id="taskInput" rows="2"
+              placeholder="e.g. trim 12s off the intro of D:\clips\raw.mp4, add captions, export vertical to Desktop"></textarea>
+            <div class="composer-row">
+              <span class="hint" id="composerHint"></span>
+              <button id="btnRun" class="primary">Run task</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="screen-col">
+          <div class="panel-head">
+            <span class="ph-title">Live screen</span>
+            <span class="spacer"></span>
+            <label class="switch tiny"><input type="checkbox" id="optBoxes" checked /><span>boxes</span></label>
+            <button id="btnInspect" class="mini">Scan elements</button>
+            <button id="btnSnap" class="mini">Refresh</button>
+          </div>
+          <div class="screen-wrap" id="screenWrap">
+            <img id="screenImg" alt="live screen preview" />
+            <svg id="boxLayer" class="box-layer"></svg>
+            <div class="screen-meta" id="screenMeta"></div>
+          </div>
+          <div class="element-list" id="elementList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ EDITOR ═══════════ -->
+    <section class="panel" data-panel="editor">
+      <div class="editor-grid">
+        <div class="card">
+          <h3>1 · Source</h3>
+          <div class="row">
+            <input id="edInput" placeholder="D:\clips\raw.mp4" />
+            <button class="mini" data-browse="file">Browse…</button>
+          </div>
+          <div id="edInfo" class="info-line">no file selected</div>
+
+          <h3>2 · What to keep</h3>
+          <div class="seg-group" id="edMode">
+            <button class="seg active" data-mode="highlights">Best moments</button>
+            <button class="seg" data-mode="keep">Remove dead air</button>
+            <button class="seg" data-mode="whole">Whole file</button>
+          </div>
+          <div class="row">
+            <label class="field sm"><span>Top N</span><input type="number" id="edTopN" value="5" min="1" max="30" /></label>
+            <label class="field sm"><span>Max seconds</span><input type="number" id="edMax" value="0" min="0" /></label>
+          </div>
+          <div class="row">
+            <button class="mini" id="btnAnalyse">Analyse</button>
+            <span class="hint">finds speech/loud moments, drops silence</span>
+          </div>
+          <div id="edSegments" class="segments"></div>
+        </div>
+
+        <div class="card">
+          <h3>3 · Look</h3>
+          <div class="seg-group" id="edRes">
+            <button class="seg" data-res="1920x1080">16:9</button>
+            <button class="seg" data-res="1080x1920">9:16</button>
+            <button class="seg" data-res="1080x1080">1:1</button>
+            <button class="seg" data-res="source">Keep</button>
+          </div>
+          <div class="row">
+            <label class="field sm"><span>FPS</span>
+              <select id="edFps"><option>24</option><option selected>30</option><option>60</option></select>
+            </label>
+            <label class="field sm"><span>Quality CRF</span>
+              <select id="edCrf">
+                <option value="16">16 · huge</option>
+                <option value="18">18 · great</option>
+                <option value="20" selected>20 · good</option>
+                <option value="23">23 · default</option>
+                <option value="28">28 · small</option>
+              </select>
+            </label>
+            <label class="field sm"><span>Transitions</span>
+              <select id="edTrans">
+                <option value="cut">hard cut</option>
+                <option value="fade">crossfade</option>
+                <option value="slide">slide</option>
+                <option value="wipe">wipe</option>
+                <option value="circleopen">circle open</option>
+              </select>
+            </label>
+          </div>
+          <label class="switch"><input type="checkbox" id="edCaptions" /><span>Auto captions (transcribe + burn in)</span></label>
+          <label class="switch"><input type="checkbox" id="edSoftCaps" /><span>as a soft subtitle track instead</span></label>
+
+          <h3>4 · Sound</h3>
+          <div class="row">
+            <input id="edMusic" placeholder="background music (optional)" />
+            <button class="mini" data-browse="file">Browse…</button>
+          </div>
+          <div class="row">
+            <label class="field sm"><span>Music dB</span><input type="number" id="edGain" value="-18" /></label>
+            <label class="switch"><input type="checkbox" id="edDuck" checked /><span>duck under speech</span></label>
+            <label class="field sm"><span>Loudness</span>
+              <select id="edNorm">
+                <option value="loudnorm" selected>-14 LUFS</option>
+                <option value="peak">peak limit</option>
+                <option value="none">leave alone</option>
+              </select>
+            </label>
+          </div>
+
+          <h3>5 · Output</h3>
+          <div class="row">
+            <input id="edOutput" placeholder="auto: <name>_clippilot.mp4" />
+          </div>
+          <div class="row">
+            <label class="switch"><input type="checkbox" id="edHandoff" /><span>then open in editor</span></label>
+            <select id="edHandoffApp"></select>
+          </div>
+          <div class="row end">
+            <button class="primary big" id="btnRender">Render</button>
+          </div>
+          <div class="progress" id="edProgress"><div class="bar"></div><span></span></div>
+          <div id="edResult" class="result"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ HANDOFF ═══════════ -->
+    <section class="panel" data-panel="handoff">
+      <div class="card narrow">
+        <h3>Send a file to a real editor</h3>
+        <p class="hint">Launches the app and imports the file using the recipe for that app.
+           Recipes are plain YAML in <code>recipes/</code>.</p>
+        <div class="row">
+          <select id="hoApp"></select>
+        </div>
+        <div class="row">
+          <input id="hoProject" placeholder="path to the rendered video or .edl/.fcpxml" />
+          <button class="mini" data-browse="file">Browse…</button>
+        </div>
+        <div class="row">
+          <input id="hoNotes" placeholder="notes for the agent (optional)" />
+        </div>
+        <div class="row end">
+          <button class="primary" id="btnHandoff">Open &amp; import</button>
+        </div>
+        <div id="hoRecipe" class="recipe"></div>
+        <div id="hoResult" class="result"></div>
+      </div>
+    </section>
+
+    <!-- ═══════════ SETUP ═══════════ -->
+    <section class="panel" data-panel="settings">
+      <div class="editor-grid">
+        <div class="card">
+          <h3>Model</h3>
+          <label class="field"><span>Endpoint</span><input id="setBaseUrl" placeholder="https://api.openai.com/v1" /></label>
+          <label class="field"><span>Model</span><input id="setModel" placeholder="gpt-4.1" /></label>
+          <label class="field"><span>API key</span><input id="setApiKey" type="password" placeholder="sk-…" /></label>
+          <div class="row">
+            <button class="mini" id="btnTestLlm">Test connection</button>
+            <span class="hint" id="llmTestOut">any OpenAI-compatible endpoint: OpenAI, OpenRouter, Groq, Ollama, LM Studio…</span>
+          </div>
+
+          <h3>Perception</h3>
+          <label class="field"><span>OCR backend</span>
+            <select id="setOcr">
+              <option value="auto">auto (prefer built-in)</option>
+              <option value="windows">Windows built-in</option>
+              <option value="tesseract">Tesseract</option>
+              <option value="none">none (vision model only)</option>
+            </select>
+          </label>
+          <div class="row end">
+            <button class="primary" id="btnSaveSettings">Save settings</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Environment</h3>
+          <div id="doctorList" class="doctor"></div>
+          <div class="row">
+            <button class="mini" id="btnDoctor">Re-check</button>
+            <span class="hint">ffmpeg is required for editing. winget install --id Gyan.FFmpeg -e</span>
+          </div>
+          <h3>Session</h3>
+          <div class="row">
+            <button class="mini" id="btnRevealRuns">Open runs folder</button>
+            <span class="hint" id="runDirLabel"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ═══════════ modal (confirm / ask) ═══════════ -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-box">
+      <div class="modal-title" id="modalTitle">The agent needs you</div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-actions" id="modalActions"></div>
+    </div>
+  </div>
+</div>
+<script src="/app.js"></script>
+</body>
+</html>
